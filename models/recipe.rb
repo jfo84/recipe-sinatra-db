@@ -15,11 +15,16 @@ class Recipe
   end
 
   def ingredients
-    ingredient_query = db_connection {|conn| conn.exec("SELECT ingredients.name
+    id = [@id.to_i]
+    ingredient_query = db_connection {|conn| conn.exec_params("SELECT ingredients.name
                                                         FROM ingredients
-                                                        JOIN recipes ON recipes.id = ingredients.recipe_id
-                                                        WHERE recipes.id == #{params[:id]}")}
-    return ingredient_query
+                                                        JOIN recipes ON ingredients.recipe_id = recipes.id
+                                                        WHERE recipes.id = $1", id) }
+    ingred_array = []
+    ingredient_query.values.each do |ingredient|
+      ingred_array << Ingredient.new(ingredient)
+    end
+    return ingred_array
   end
 
   def self.all
@@ -31,7 +36,8 @@ class Recipe
   end
 
   def self.find(id)
-    @recipe_query.select {|recipe| recipe.id == id}.first
+    find = @recipe_query.select {|recipe| recipe.id == id}
+    return find[0]
   end
 
 end
